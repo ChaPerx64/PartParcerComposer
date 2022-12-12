@@ -114,7 +114,7 @@ def file_scanner(extention: str):
 
 # Функция, которая ищет доки в листе доков для соответствующих деталей из списка деталей
 # и возвращает список путей к этим докам, прицепив поле с заданным ключом в исходном словаре
-def matchmaker(partslist: list, doclist: list, ext: str):
+def matchmaker(partslist: list, doclist: list, ext: str, lookformain=False):
     ext = ext.lower()
     endline = ' ' + ext + '.'
     for part in partslist:
@@ -127,15 +127,22 @@ def matchmaker(partslist: list, doclist: list, ext: str):
         ls_length = len(pathlist)
         if ls_length == 0 and '-' in part[COL_NAMES[0]]:
             print(BColors.YELLOW + 'Для детали ' + part[COL_NAMES[0]] + ' не найдено' + endline + BColors.ENDC)
-            print('Пробую найти групповой чертёж...')
-            groupdocname = str(part[COL_NAMES[0]]).rsplit('-', 1)[0]
-            log_out_txt(
-                'Для детали ' + part[COL_NAMES[0]] + ' выполнялся поиск группового чертежа по обозначению: ' +
-                groupdocname + '\n'
-            )
-            for doc in doclist:
-                if doc[0] == groupdocname:
-                    pathlist.append(doc[1])
+            if lookformain:
+                print('Пробую найти групповой чертёж...')
+                groupdocname = str(part[COL_NAMES[0]]).rsplit('-', 1)[0]
+                log_out_txt(
+                    'Для детали ' + part[COL_NAMES[0]] + ' выполнялся поиск группового чертежа по обозначению: ' +
+                    groupdocname + '\n'
+                )
+                for doc in doclist:
+                    if doc[0] == groupdocname:
+                        pathlist.append(doc[1])
+            else:
+                print('Поиск группового чертежа не выполнялся')
+                log_out_txt(
+                    'Для детали ' + part[COL_NAMES[0]] + ' поиск группового чертежа не выполнялся'
+                )
+
 
         # ОКОНЧАТЕЛЬНАЯ ОЦЕНКА КОЛИЧЕСТВА НАЙДЕННЫХ ФАЙЛОВ
         ls_length = len(pathlist)
@@ -266,7 +273,7 @@ if __name__ == '__main__':
 
     # ПОИСК ДОКОВ ДЛЯ ЛАЗЕРА
     print('\nИщу КД на детали, помеченные для лазера...')
-    ls_laser = matchmaker(ls_laser, pdf_files, 'pdf')
+    ls_laser = matchmaker(ls_laser, pdf_files, 'pdf', lookformain=True)
     ls_laser = matchmaker(ls_laser, dxf_files, 'dxf')
     print('\nКопирую обнаруженные файлы лазерки в созданную директорию...')
     files_copier(ls_laser, 'pdf', os.path.join(new_folder_path, 'Лазер/PDF/'))
