@@ -226,7 +226,7 @@ if __name__ == '__main__':
         # if ls_laser is None or ls_tokar is None:
         #     continue
         log_out_txt(
-            '\nЛист ' + sheetname + '\n'
+            '\nЛист "' + sheetname + '"\n'
         )
         print('Читаю лист ' + sheetname)
 
@@ -287,3 +287,4 @@ if __name__ == '__main__':
     )
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
