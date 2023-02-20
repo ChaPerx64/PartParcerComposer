@@ -34,7 +34,7 @@ def spec_finder():
     return xlsx_filename
 
 
-# Функция, вытаскивающая детали из листа ексель, и распределяющая их по спискам
+# Функция, вытаскивающая детали из листа эксель, и распределяющая их по спискам
 def parts_list_exctractor(worksheet, laser_list: list, tokar_list: list):
     coord = file_checker(worksheet)
     if coord is None:
@@ -53,12 +53,8 @@ def parts_list_exctractor(worksheet, laser_list: list, tokar_list: list):
         if not part['marsh'] is None:
             if 'Лазер' in str(part['marsh']):
                 laser_list = add_part_to_list(laser_list, part)
-                pass
             if 'Токар' in str(part['marsh']):
                 tokar_list = add_part_to_list(tokar_list, part)
-                pass
-    for item in laser_list:
-        print(item)
     return laser_list, tokar_list
 
 
@@ -140,7 +136,7 @@ def matchmaker(partslist: list, doclist: list, ext: str, lookformain=False):
             else:
                 print('Поиск группового чертежа не выполнялся')
                 log_out_txt(
-                    'Для детали ' + part[COL_NAMES[0]] + ' поиск группового чертежа не выполнялся'
+                    'Для детали ' + part[COL_NAMES[0]] + ' поиск группового чертежа не выполнялся\n'
                 )
 
 
@@ -219,7 +215,8 @@ if __name__ == '__main__':
     print('Обнаружен файл ' + spec_finder() + '.\n')
 
     # СОЗДАНИЕ СПИСКОВ ДЕТАЛЕЙ НА ТОКАРКУ И ЛАЗЕРКУ ИЗ РАБОЧИХ ЛИСТОВ
-    ls_laser = ls_tokar = []
+    ls_laser = []
+    ls_tokar = []
     for sheetname in speca.sheetnames:
         active_ws = speca[sheetname]
         ls_laser, ls_tokar = parts_list_exctractor(active_ws, ls_laser, ls_tokar)
@@ -265,19 +262,24 @@ if __name__ == '__main__':
         os.remove("log.txt")
 
     # ПОИСК ДОКОВ ДЛЯ ТОКАРКИ
+    log_out_txt("\nТОКАРКА, PDF\n")
     print('\nИщу КД на детали, помеченные для токарки...')
-    ls_tokar = matchmaker(ls_tokar, pdf_files, 'pdf')
+    ls_tokar = matchmaker(ls_tokar, pdf_files, 'pdf', lookformain=True)
     print('\nКопирую обнаруженные файлы токарки в созданную директорию...')
     files_copier(ls_tokar, 'pdf', os.path.join(new_folder_path, 'Токарка/'))
     print('Копирование завершено')
 
     # ПОИСК ДОКОВ ДЛЯ ЛАЗЕРА
+    log_out_txt("\nЛАЗЕРКА, PDF\n")
     print('\nИщу КД на детали, помеченные для лазера...')
     ls_laser = matchmaker(ls_laser, pdf_files, 'pdf', lookformain=True)
-    ls_laser = matchmaker(ls_laser, dxf_files, 'dxf')
-    print('\nКопирую обнаруженные файлы лазерки в созданную директорию...')
     files_copier(ls_laser, 'pdf', os.path.join(new_folder_path, 'Лазер/PDF/'))
+    log_out_txt("\nЛАЗЕРКА, DXF\n")
+    ls_laser = matchmaker(ls_laser, dxf_files, 'dxf')
     files_copier(ls_laser, 'dxf', os.path.join(new_folder_path, 'Лазер/DXF/'))
+
+
+
     print('Копирование завершено')
 
     # ПАУЗА ДЛЯ ПРОЧТЕНИЯ ВСЕГО, ЧТО НАРОДИЛ СКРИПТ :)

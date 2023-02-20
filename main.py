@@ -4,6 +4,7 @@ import PartParser
 import sys
 import GCPathHandler as ph
 from configparser import ConfigParser
+from blankshandler import BlanksHandler
 
 # Constants for style)
 H1_FONT = ("Segoe UI", 22)
@@ -57,9 +58,11 @@ def touch_config(force_create=False):
     if force_create:
         try:
             sg.popup_ok('Настройка приложения.')
-            gc_path = sg.popup_get_folder('Укажи корневую папку GrabCAD.')
+            gc_path = sg.popup_get_folder('Укажи корневую папку КД.')
             configur.add_section("paths")
             configur.set("paths", "grabcad_path", gc_path)
+            blanks_path = sg.popup_get_folder('Укажи папку бланков.')
+            configur.set("paths", "blanks_path", blanks_path)
             configur.add_section('common folders')
             try:
                 i = 1
@@ -76,18 +79,22 @@ def touch_config(force_create=False):
     else:
         try:
             configur.read("config.ini")
-            config_out.update({"GRABCAD_PATH": configur.get("paths", "grabcad_path")})
-            c_folders = []
-            for name, path in configur.items(section='common folders'):
-                c_folders.append(path)
-            config_out.update({"COMMON_FOLDERS": c_folders})
+            configur.get("paths", "blanks_path")
+            configur.get("paths", "grabcad_path")
+            # config_out.update({"GRABCAD_PATH": configur.get("paths", "grabcad_path")})
+            # c_folders = []
+            # for name, path in configur.items(section='common folders'):
+            #     c_folders.append(path)
+            # config_out.update({"COMMON_FOLDERS": c_folders})
         except:
             return touch_config(force_create=True)
-    return config_out
+    return configur
 
 
 if __name__ == '__main__':
     CONFIG = touch_config()
+    bhandler = BlanksHandler(CONFIG)
+    print(bhandler.get_blanks_paths())
     # window['-GCFolder-'].update(CONFIG['GRABCAD_PATH'])
     while True:
         if CONFIG is None:
