@@ -138,29 +138,5 @@ count = 1
 for item in parser.get_flat_unformatted():
     print('\nEntry #' + str(count))
     print(item)
-    # for key, value in item.items():
-    #     print('     ', key, ': ', value, sep='')
     count += 1
 
-# Функция, вытаскивающая детали из листа эксель, и распределяющая их по спискам
-# def parts_list_exctractor(worksheet, laser_list: list, tokar_list: list):
-#     coord = file_checker(worksheet)
-#     if coord is None:
-#         return laser_list, tokar_list
-#     i = 0
-#     parts_list = list()
-#     for row in worksheet.rows:
-#         if i < coord['lstart']:
-#             i += 1
-#             continue
-#         part_prop = dict()
-#         for item in COL_NAMES:
-#             part_prop.update({item: row[coord[item]].value})
-#         parts_list.append(part_prop)
-#     for part in parts_list:
-#         if not part['marsh'] is None:
-#             if 'Лазер' in str(part['marsh']):
-#                 laser_list = add_part_to_list(laser_list, part)
-#             if 'Токар' in str(part['marsh']):
-#                 tokar_list = add_part_to_list(tokar_list, part)
-#     return laser_list, tokar_list
