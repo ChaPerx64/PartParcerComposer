@@ -1,4 +1,6 @@
 # from openpyxl import load_workbook
+import operator
+
 from aux_code import load_first_sheet
 # SPECS = 'specs'
 
@@ -7,11 +9,11 @@ def p(what='foo'):
 
 
 class SpecParser:
-    def __init__(self, xl_path, key_pos, key_qty):
+    def __init__(self, xl_path, params: dict):
         self.path = xl_path
         self.sheet = self._load_first_sheet()
-        self.pos_key = key_pos.lower()
-        self.qty_key = key_qty.lower()
+        self.pos_key = params.get('POSITION_MARKER')
+        self.qty_key = params.get('QUANTITY_MARKER')
         self.specs_key = 'specs'
 
     def _load_first_sheet(self, remove_enters=True):
@@ -23,7 +25,9 @@ class SpecParser:
         for row in self.sheet.rows:
             for cell in row:
                 if cell.value:
-                    headers.append(str(cell.value).lower())
+                    headers.append(str(cell.value))
+                else:
+                    headers.append('')
             break
         return headers
 
@@ -37,7 +41,7 @@ class SpecParser:
                     if cell.value:
                         line.append(str(cell.value))
                     else:
-                        line.append(None)
+                        line.append('')
                 rows.append(line)
             count += 1
         return rows
@@ -116,13 +120,15 @@ class SpecParser:
         out_list = list()
         for entry in self.get_flatlist():
             out_list.append(self.dict_to_entry(entry))
+        out_list.sort(key=operator.itemgetter('Обозначение', 'Наименование'))
         return out_list
 
 
 # for tests
 if __name__ == '__main__':
     XL_PATH = './Пример спеки/Shifted spec.xlsx'
-    parser = SpecParser(XL_PATH, 'Поз.', 'Кол-во')
+    params_now = {'POSITION_MARKER': 'Поз.', 'QUANTITY_MARKER': 'Кол-во'}
+    parser = SpecParser(XL_PATH, params_now)
     count = 1
     for item in parser.get_flat_unformatted():
         print('\nEntry #' + str(count))

@@ -4,7 +4,7 @@ from openpyxl import load_workbook
 
 def load_first_sheet(xl_path, remove_enters=True):
     try:
-        xl_workbook = load_workbook(xl_path, read_only=False)
+        xl_workbook = load_workbook(xl_path, read_only=False, data_only=True)
     except:
         raise RuntimeError('Ошибка чтения файла:', xl_path)
     active_sheet = xl_workbook[xl_workbook.sheetnames[0]]
