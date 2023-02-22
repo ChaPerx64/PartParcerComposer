@@ -18,27 +18,14 @@ class BlanksParser:
 
     # Метод, который анализирует xlsx-файл по данному пути и возвращает dict c парами заголовок-фильтр
     def get_filters(self):
-        headers_list = list()
-        filters_list = list()
         forming_dict = dict()
-        count = 1
-        for row in self.sheet.rows:
-            if count == 3:  # Заголовки в третьей строке
-                for cell in row:
-                    if cell.value is None:
-                        headers_list.append(None)
-                        # Отдельная обработка None, потому что оно конвертируется в строку 'none' командой ниже
-                    else:
-                        headers_list.append(str(cell.value).lower())
-            if count == 4:  # Фильтры в четвертой
-                for cell in row:
-                    if cell.value is None:
-                        filters_list.append(None)  # См. выше
-                    else:
-                        filters_list.append(str(cell.value).lower())
-                break
-            count += 1
-        for header, subfilter in zip(headers_list, filters_list):
+        for j in range(1, self.sheet.max_column):
+            header = self.sheet.cell(row=3, column=j).value
+            subfilter = self.sheet.cell(row=4, column=j).value
+            if header:                              # Чтобы None не превращалось в 'none'
+                header = str(header).lower()
+            if subfilter:                           # Чтобы None не превращалось в 'none'
+                subfilter = str(subfilter).lower()
             forming_dict.update({header: subfilter})
         if not forming_dict:
             raise FileNotFoundError('Ошибка формирования словаря фильтров: ' + str(path))
@@ -47,10 +34,9 @@ class BlanksParser:
     # Проверяет xlsx-файлы на соответствие критериям
     # Сейчас это: первая ячейка первого листа должна содержать XL_HEADER
     def is_pp(self, pp_header):
-        if self.sheet['A1'].value == pp_header:
+        if self.sheet.cell(row=1, column=1).value == pp_header:
             return True
         return None
-
 
 
 # Класс BlankHandler, занимающийся сбором и анализом xlsx-бланков заказов
@@ -85,6 +71,13 @@ class BlanksHandler:
     def form_blank(self, path_source, path_destination):
         pass  # копировать шаблон
         pass  # наполнить его
+
+
+class BlankFiller:
+    def __init__(self, xl_path):
+        load
+
+    pass
 
 
 # Для тестов
