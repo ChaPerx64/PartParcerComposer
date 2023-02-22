@@ -1,5 +1,5 @@
-from openpyxl import load_workbook
-
+# from openpyxl import load_workbook
+from aux_code import load_first_sheet
 # SPECS = 'specs'
 
 def p(what='foo'):
@@ -15,18 +15,7 @@ class SpecParser:
         self.specs_key = 'specs'
 
     def _load_first_sheet(self, remove_enters=True):
-        try:
-            xl_workbook = load_workbook(self.path, read_only=False)
-        except:
-            raise RuntimeError('Ошибка чтения xlsx-файла')
-        active_sheet = xl_workbook[xl_workbook.sheetnames[0]]
-        for row in active_sheet.rows:
-            for cell in row:
-                if remove_enters:
-                    if cell.value:
-                        new_value = str(cell.value).replace('\n', '')
-                        cell.value = new_value
-        return active_sheet
+        return load_first_sheet(self.path)
 
     # Метод, получающий заголовки из листа
     def _get_spec_headers(self):
@@ -130,13 +119,13 @@ class SpecParser:
         return out_list
 
 
-
 # for tests
-XL_PATH = './Пример спеки/Shifted spec.xlsx'
-parser = SpecParser(XL_PATH, 'Поз.', 'Кол-во')
-count = 1
-for item in parser.get_flat_unformatted():
-    print('\nEntry #' + str(count))
-    print(item)
-    count += 1
+if __name__ == '__main__':
+    XL_PATH = './Пример спеки/Shifted spec.xlsx'
+    parser = SpecParser(XL_PATH, 'Поз.', 'Кол-во')
+    count = 1
+    for item in parser.get_flat_unformatted():
+        print('\nEntry #' + str(count))
+        print(item)
+        count += 1
 
