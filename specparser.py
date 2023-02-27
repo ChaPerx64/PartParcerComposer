@@ -2,6 +2,8 @@
 import operator
 
 from aux_code import load_first_sheet
+
+
 # SPECS = 'specs'
 
 def p(what='foo'):
@@ -89,7 +91,7 @@ class SpecParser:
             if prev_depth < depth:
                 mplicators_ls.append(prev_qty)
             if prev_depth > depth:
-                mplicators_ls.pop(len(mplicators_ls)-1)
+                mplicators_ls.pop(len(mplicators_ls) - 1)
             mplicator = 1
             for a in mplicators_ls:
                 mplicator = mplicator * a
@@ -112,7 +114,7 @@ class SpecParser:
                 flat_list.append(entry)
         return flat_list
 
-    def dict_to_entry(self, dict_entry:dict):
+    def dict_to_entry(self, dict_entry: dict):
         for key, value in dict_entry[self.specs_key].items():
             dict_entry.update({key: value})
         dict_entry.pop(self.specs_key)
@@ -134,8 +136,6 @@ class SpecParser:
         return out_str
 
 
-
-
 # for tests
 if __name__ == '__main__':
     XL_PATH = './Пример спеки/Familia Rack.xlsx'
@@ -146,4 +146,3 @@ if __name__ == '__main__':
         print('\nEntry #' + str(count))
         print(item)
         count += 1
-
