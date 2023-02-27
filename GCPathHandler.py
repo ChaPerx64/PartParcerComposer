@@ -1,5 +1,6 @@
 import os
 
+
 class CDPath:
     def __init__(self, path: os.PathLike):
         self.path = str(path)
@@ -11,6 +12,7 @@ def is_gc_directory(path: str):
         return True
     else:
         return False
+
 
 def is_in_gc(path: str):
     if 'GrabCAD' in path:

@@ -1,60 +1,13 @@
 # Модуль, который сканирует бланки в папке бланков и создает из них процедуры
 
-import os, shutil, time, datetime, copy
-from openpyxl import load_workbook, Workbook
+import datetime
+import os
+import time
+
+from blanksparser import BlanksParser
 from specparser import SpecParser
-from aux_code import load_first_sheet
-
-
-class BlanksParser:
-    def __init__(self, xl_path, params: dict):
-        self.path = xl_path
-        self.sheet = self._load_first_sheet()
-        self.pp_number = params.get('PP_NUMBER')
-        self.pp_header = params.get('PP_HEADER')
-        if not self.is_pp():
-            raise FileNotFoundError('Данный файл не является файлом ПП-бланка:', self.path)
-
-    def _load_first_sheet(self):
-        return load_first_sheet(self.path)
-
-    # Метод, который анализирует xlsx-файл по данному пути и возвращает dict c парами заголовок-фильтр
-    def get_filters(self):
-        forming_dict = dict()
-        for j in range(1, self.sheet.max_column):
-            header = self.sheet.cell(row=3, column=j).value
-            subfilter = self.sheet.cell(row=4, column=j).value
-            if header == self.pp_number:
-                continue
-            elif header:                              # Чтобы None не превращалось в 'none'
-                header = str(header)
-            else:
-                header = ''
-            if subfilter:                           # Чтобы None не превращалось в 'none'
-                subfilter = str(subfilter).lower()
-            else:
-                subfilter = ''
-            forming_dict.update({header: subfilter})
-        if not forming_dict:
-            raise FileNotFoundError('Ошибка формирования словаря фильтров: ' + str(self.path))
-        return forming_dict
-
-    # Проверяет xlsx-файлы на соответствие критериям
-    # Сейчас это: первая ячейка первого листа должна содержать XL_HEADER
-    def is_pp(self):
-        if self.sheet.cell(row=1, column=1).value == self.pp_header:
-            return True
-        return None
-
-    def get_copy(self):
-        new_wb = Workbook()
-        new_ws = new_wb.active
-        for row in self.sheet:
-            line = list()
-            for cell in row:
-                line.append(cell.value)
-            new_ws.append(line)
-        return new_ws
+from entrymatcher import EntryMatcher
+from aux_code import filename_from_path
 
 
 # Класс BlankHandler, занимающийся сбором и анализом xlsx-бланков заказов
@@ -66,6 +19,7 @@ class BlanksHandler:
         self.PP_HEADER = params.get("PP_HEADER")
         self.params = params
         self.found_blanks = self.get_blanks_paths()
+        self.blanks_names = self.get_blanks_names(self.found_blanks)
 
     # Ищет файлы бланков в директории, прописанной в конфиге
     def get_blanks_paths(self):
@@ -81,13 +35,22 @@ class BlanksHandler:
             raise FileNotFoundError("Файлов бланков не найдено!")
         return blanks_pathlist
 
-    def save_formatted_copy(self, index: int, path_destination: str):
-        bparser = BlanksParser(self.found_blanks[index], self.params)
-        new_wb = bparser.get_copy().parent
-        new_ws = self.format_sheet(new_wb.active)
-        new_wb.save(path_destination)
-        bparser = BlanksParser(path_destination, self.params)
-        print(bparser.get_filters())
+    @staticmethod
+    def get_blanks_names(pathlist: list[str]):
+        out_ls = list()
+        for item in pathlist:
+            out_ls.append(filename_from_path(item))
+        return out_ls
+
+    def get_copy_wbws(self, source_path):
+        bparser = BlanksParser(source_path, self.params)
+        new_wb_ws = bparser.get_copy()
+        return new_wb_ws
+
+    def save_formatted_copy(self, source_path, path_destination: str):
+        new_ws = self.get_copy_wbws(source_path)
+        new_ws = self.format_sheet(new_ws)
+        new_ws.parent.save(path_destination)
 
     def format_sheet(self, sheet):
         sheet.delete_rows(1)
@@ -99,52 +62,37 @@ class BlanksHandler:
                         cell.value = str(cell.value).replace(key, value)
         return sheet
 
-
-
-    def fill_blank(self, path):
-        # parser =
-        pass
-
-    def form_blank(self, path_source, path_destination):
-        pass    # копировать шаблон
-        pass    # наполнить его
-        pass    # save it
-
-
-class BlankFiller:
-    def __init__(self, filters: dict, partslist: list[dict], params: dict, xl_path='', sheet=None):
-        if xl_path != '':
-            self.blank = load_first_sheet(xl_path)
-        elif not sheet:
-            self.blank = sheet
+    def fill_blank(self, b_path, spec_path):
+        sparser = SpecParser(spec_path, self.params)
+        bparser = BlanksParser(b_path, self.params)
+        order_sheet = bparser.get_copy()
+        matcher = EntryMatcher(bparser.get_filters(), sparser.get_flat_unformatted(), self.params)
+        if not matcher.errors:
+            i = 4
+            for entry in matcher.get_matches():
+                order_sheet.cell(row=i, column=1).value = i - 3
+                j = 2
+                for svalue in entry.values():
+                    order_sheet.cell(row=i, column=j).value = svalue
+                    j += 1
+                i += 1
+            return order_sheet
         else:
-            raise RuntimeError('Ошибка заполнения бланка')
-        self.partslist = partslist
-        self.filters = filters
-        self.sheet = sheet
+            out_list = list()
+            for item in matcher.errors:
+                out_list.append({self.params.get('KEY_1'): item})
+            return out_list
 
-    def get_matches(self):
-        ls_out = list()
-        for entry in self.partslist:
-            flag1 = True
-            entry_out = dict()
-            for key, value in self.filters.items():
-                if key in entry.keys():
-                    if value in entry[key]:
-                        print(key, entry[key])
-                        entry_out.update({key: entry[key]})
-                    else:
-                        continue
-                else:
-                    continue
-            # if entry_out != {}:
-            ls_out.append(entry_out)
-        return ls_out
+    def form_order(self, list_no: int, spec_path, path_destination):
+        order_sheet = self.fill_blank(self.found_blanks[list_no], spec_path)
+        order_sheet = self.format_sheet(order_sheet)
+        order_sheet.parent.save(path_destination)
 
 
 # Для тестов
 if __name__ == '__main__':
     from configparser import ConfigParser
+
     configur = ConfigParser()
     configur.read('config.ini')
     configur_now = {'blanks_path': configur.get("paths", "blanks_path"),
@@ -156,21 +104,15 @@ if __name__ == '__main__':
                     '<OTHER>': '',
                     'PP_NUMBER': 'Номер',
                     'POSITION_MARKER': 'Поз.',
-                    'QUANTITY_MARKER': 'Кол-во'
+                    'QUANTITY_MARKER': 'Кол-во',
+                    'KEY_1': 'Обозначение',
+                    'KEY_2': 'Наименование'
                     }
     bhandler = BlanksHandler(configur_now)
-    # creating new filename
-    old_path = bhandler.get_blanks_paths()[0]
-    # new_ls = old_path.split('.')
-    # new_ls[1] = new_ls[1] + ' ' + '_'.join((str(time.gmtime().tm_hour), str(time.gmtime().tm_min), str(time.gmtime().tm_sec)))
-    # new_path = '.'.join(new_ls)
-    # copying
-    # bhandler.save_formatted_copy(0, new_path)
-    bparser = BlanksParser(old_path, configur_now)
-    sparser = SpecParser('./Пример спеки/Shifted spec.xlsx', configur_now)
-    bfiller = BlankFiller(bparser.get_filters(), sparser.get_flat_unformatted(), configur_now)
-    for enrty in bfiller.get_matches():
-        print( )
-
-    # print(bparser.get_filters())
-    # bfiller = BlankFiller(new_path)
+    index_yo = 5
+    spec_path = './Пример спеки/Плоская.xlsx'
+    new_ls = spec_path.split('.')
+    new_ls[1] = new_ls[1] + ' ' + '_'.join(
+        (str(time.gmtime().tm_hour), str(time.gmtime().tm_min), str(time.gmtime().tm_sec)))
+    new_path = '.'.join(new_ls)
+    bhandler.form_order(index_yo, spec_path, new_path)

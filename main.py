@@ -3,8 +3,8 @@ import os.path
 import PartParser
 import sys
 import GCPathHandler as ph
-from configparser import ConfigParser
 from blankshandler import BlanksHandler
+from confighandler import ConfigHandler, touch_config
 
 # Constants for style)
 H1_FONT = ("Segoe UI", 22)
@@ -13,18 +13,19 @@ DEFAULT_FONT = ('Segoe UI', 10)
 SMALL_FONT = ("Segoe UI", 8)
 SPEC_TYPES = ("Плоская спецификация",)
 
+
 # Create layout
 layout = [
     [sg.Push(), sg.Text("Welcome to PartParser!", font=H1_FONT), sg.Push()],
     [sg.HSeparator()],
-    [sg.Text("Спецификация для парсинга", font=H2_FONT)],
-    [sg.Text("Выбери Excel-файл"), sg.In(enable_events=True, key='-XLSX-'), sg.FileBrowse(key='XBrowse')],
-    [sg.Text("Выбери тип спецификации"), sg.Listbox(SPEC_TYPES,
-                                                    no_scrollbar=True,
-                                                    size=(60, len(SPEC_TYPES)),
-                                                    font=SMALL_FONT,
-                                                    select_mode="LISTBOX_SELECT_MODE_SINGLE",
-                                                    )],
+    [sg.Text("Формирование заказа", font=H2_FONT)],
+    [sg.Text("Спецификация сборки"), sg.In(enable_events=True, key='-XLSX-'), sg.FileBrowse(key='XBrowse')],
+    [sg.Text("Бланки спецификации"), sg.Listbox(SPEC_TYPES,
+                                                no_scrollbar=True,
+                                                size=(60, len(SPEC_TYPES)),
+                                                font=SMALL_FONT,
+                                                select_mode="LISTBOX_SELECT_MODE_SINGLE",
+                                                )],
     [sg.HSeparator()],
     [sg.Text("Область поиска", font=H2_FONT)],
     [sg.Text("Папка поиска"), sg.In(enable_events=True,
@@ -52,49 +53,14 @@ window = sg.Window(
 
 
 # Load or create the configuration file
-def touch_config(force_create=False):
-    configur = ConfigParser()
-    config_out = {}
-    if force_create:
-        try:
-            sg.popup_ok('Настройка приложения.')
-            gc_path = sg.popup_get_folder('Укажи корневую папку КД.')
-            configur.add_section("paths")
-            configur.set("paths", "grabcad_path", gc_path)
-            blanks_path = sg.popup_get_folder('Укажи папку бланков.')
-            configur.set("paths", "blanks_path", blanks_path)
-            configur.add_section('common folders')
-            try:
-                i = 1
-                while sg.popup_ok_cancel('Добавить общую папку ' + str(i) +'?') == 'OK':
-                    configur.set('common folders', '_'.join(('folder', str(i))), sg.popup_get_folder('Укажи путь'))
-                    i += 1
-            except:
-                sg.popup_ok('Добавление папки отменено')
-            with open('config.ini', 'w') as conf:
-                configur.write(conf)
-            sg.popup_annoying('Программа сконфигурирована!')
-        except:
-            return None
-    else:
-        try:
-            configur.read("config.ini")
-            configur.get("paths", "blanks_path")
-            configur.get("paths", "grabcad_path")
-            # config_out.update({"GRABCAD_PATH": configur.get("paths", "grabcad_path")})
-            # c_folders = []
-            # for name, path in configur.items(section='common folders'):
-            #     c_folders.append(path)
-            # config_out.update({"COMMON_FOLDERS": c_folders})
-        except:
-            return touch_config(force_create=True)
-    return configur
+
 
 
 if __name__ == '__main__':
     CONFIG = touch_config()
-    bhandler = BlanksHandler(CONFIG)
-    print(bhandler.get_blanks_paths())
+    print(CONFIG)
+    # bhandler = BlanksHandler(CONFIG)
+    # print(bhandler.get_blanks_paths())
     # window['-GCFolder-'].update(CONFIG['GRABCAD_PATH'])
     while True:
         if CONFIG is None:

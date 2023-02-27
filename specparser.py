@@ -14,6 +14,8 @@ class SpecParser:
         self.sheet = self._load_first_sheet()
         self.pos_key = params.get('POSITION_MARKER')
         self.qty_key = params.get('QUANTITY_MARKER')
+        self.key1 = params.get('KEY_1')
+        self.key2 = params.get('KEY_2')
         self.specs_key = 'specs'
 
     def _load_first_sheet(self, remove_enters=True):
@@ -33,17 +35,17 @@ class SpecParser:
 
     def _get_spec_rows(self):
         rows = []
-        count = 1
+        counter = 1
         for row in self.sheet.rows:
             line = []
-            if count > 1:
+            if counter > 1:
                 for cell in row:
                     if cell.value:
                         line.append(str(cell.value))
                     else:
-                        line.append('')
+                        line.append(None)
                 rows.append(line)
-            count += 1
+            counter += 1
         return rows
 
     def get_entries_raw(self):
@@ -99,8 +101,8 @@ class SpecParser:
 
     def get_flatlist(self):
         flat_list = list()
-        counted = False
         for entry in self.get_counted():
+            counted = False
             for fl_entry in flat_list:
                 if fl_entry[self.specs_key] == entry[self.specs_key]:
                     fl_entry[self.qty_key] = str(int(entry[self.qty_key]) + int(fl_entry[self.qty_key]))
@@ -120,13 +122,23 @@ class SpecParser:
         out_list = list()
         for entry in self.get_flatlist():
             out_list.append(self.dict_to_entry(entry))
-        out_list.sort(key=operator.itemgetter('Обозначение', 'Наименование'))
+        out_list.sort(key=self._sort_weight)
+        # out_list.sort(key=operator.itemgetter('Обозначение', 'Наименование'))
         return out_list
+
+    def _sort_weight(self, line: dict):
+        out_str = ''
+        for key in (self.key1, self.key2):
+            if line.get(key):
+                out_str += str(line.get(key)).lower()
+        return out_str
+
+
 
 
 # for tests
 if __name__ == '__main__':
-    XL_PATH = './Пример спеки/Shifted spec.xlsx'
+    XL_PATH = './Пример спеки/Familia Rack.xlsx'
     params_now = {'POSITION_MARKER': 'Поз.', 'QUANTITY_MARKER': 'Кол-во'}
     parser = SpecParser(XL_PATH, params_now)
     count = 1

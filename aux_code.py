@@ -15,3 +15,14 @@ def load_first_sheet(xl_path, remove_enters=True):
                     new_value = str(cell.value).replace('\n', '')
                     cell.value = new_value
     return active_sheet
+
+
+def filename_from_path(path: str):
+    try:
+        slices = path.split('.')
+        slices.reverse()
+        slices = str(slices[1]).split('/')
+        slices.reverse()
+        return slices[0]
+    except Exception:
+        raise FileNotFoundError
