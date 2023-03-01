@@ -19,7 +19,7 @@ class BlanksHandler:
         self.PP_HEADER = params.get("PP_HEADER")
         self.params = params
         self.found_blanks = self.get_blanks_paths()
-        self.blanks_names = self.get_blanks_names(self.found_blanks)
+        self.blanks_names = self.get_blanks_names()
 
     # Ищет файлы бланков в директории, прописанной в конфиге
     def get_blanks_paths(self):
@@ -35,10 +35,9 @@ class BlanksHandler:
             raise FileNotFoundError("Файлов бланков не найдено!")
         return blanks_pathlist
 
-    @staticmethod
-    def get_blanks_names(pathlist: list[str]):
+    def get_blanks_names(self):
         out_ls = list()
-        for item in pathlist:
+        for item in self.found_blanks:
             out_ls.append(filename_from_path(item))
         return out_ls
 
@@ -83,10 +82,16 @@ class BlanksHandler:
                 out_list.append({self.params.get('KEY_1'): item})
             return out_list
 
-    def form_order(self, list_no: int, spec_path, path_destination):
+    def form_order_fromind(self, list_no: int, spec_path, path_destination):
         order_sheet = self.fill_blank(self.found_blanks[list_no], spec_path)
         order_sheet = self.format_sheet(order_sheet)
         order_sheet.parent.save(path_destination)
+
+    def form_order_fromname(self, blankname, spec_path, path_destination):
+        if blankname in self.blanks_names:
+            return self.form_order_fromind(self.blanks_names.index(blankname), spec_path, path_destination)
+
+
 
 
 # Для тестов
@@ -110,9 +115,9 @@ if __name__ == '__main__':
                     }
     bhandler = BlanksHandler(configur_now)
     index_yo = 5
-    spec_path = './Пример спеки/Плоская.xlsx'
+    spec_path = './Пример спеки/Familia Rack.xlsx'
     new_ls = spec_path.split('.')
     new_ls[1] = new_ls[1] + ' ' + '_'.join(
         (str(time.gmtime().tm_hour), str(time.gmtime().tm_min), str(time.gmtime().tm_sec)))
     new_path = '.'.join(new_ls)
-    bhandler.form_order(index_yo, spec_path, new_path)
+    bhandler.form_order_fromind(index_yo, spec_path, new_path)
