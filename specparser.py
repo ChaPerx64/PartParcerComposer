@@ -16,12 +16,12 @@ class SpecParser:
         self.sheet = self._load_first_sheet()
         self.pos_key = params.get('POSITION_MARKER')
         self.qty_key = params.get('QUANTITY_MARKER')
-        self.key1 = params.get('KEY_1')
-        self.key2 = params.get('KEY_2')
+        self.key1 = params.get('SPEC_SORT_1')
+        self.key2 = params.get('SPEC_SORT_2')
         self.specs_key = 'specs'
 
     def _load_first_sheet(self, remove_enters=True):
-        return load_first_sheet(self.path)
+        return load_first_sheet(self.path, remove_enters)
 
     # Метод, получающий заголовки из листа
     def _get_spec_headers(self):
@@ -91,7 +91,8 @@ class SpecParser:
             if prev_depth < depth:
                 mplicators_ls.append(prev_qty)
             if prev_depth > depth:
-                mplicators_ls.pop(len(mplicators_ls) - 1)
+                for i in range(prev_depth - depth):
+                    mplicators_ls.pop(-1)
             mplicator = 1
             for a in mplicators_ls:
                 mplicator = mplicator * a
@@ -134,15 +135,3 @@ class SpecParser:
             if line.get(key):
                 out_str += str(line.get(key)).lower()
         return out_str
-
-
-# for tests
-if __name__ == '__main__':
-    XL_PATH = './Пример спеки/Familia Rack.xlsx'
-    params_now = {'POSITION_MARKER': 'Поз.', 'QUANTITY_MARKER': 'Кол-во'}
-    parser = SpecParser(XL_PATH, params_now)
-    count = 1
-    for item in parser.get_flat_unformatted():
-        print('\nEntry #' + str(count))
-        print(item)
-        count += 1
