@@ -21,10 +21,8 @@ def load_first_sheet(xl_path, remove_enters=True):
 def filename_from_path(path: str):
     try:
         slices = path.split('.')
-        slices.reverse()
-        slices = str(slices[1]).split('/')
-        slices.reverse()
-        return slices[0]
+        slices = str(slices[-2]).split('/')
+        return slices[-1]
     except Exception:
         raise FileNotFoundError
 
