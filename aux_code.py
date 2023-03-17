@@ -28,7 +28,7 @@ def filename_from_path(path: str):
 
 
 def new_filepath(project_name: str, save_folder: str, blankname: str):
-    out_filepath = save_folder + project_name + '   ' + blankname + '.xlsx'
+    out_filepath = save_folder + project_name + ' ' + blankname + '.xlsx'
     return out_filepath
 
 
