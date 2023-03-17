@@ -14,7 +14,7 @@ def load_first_sheet(xl_path, remove_enters=True):
             if remove_enters:
                 if cell.value:
                     new_value = str(cell.value).replace('\n', '')
-                    cell.value = new_value
+                    cell.value = new_value.strip()
     return active_sheet
 
 
