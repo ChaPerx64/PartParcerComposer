@@ -1,2 +1,7 @@
 /.idea
+Бланки/
+Пример спеки/
+layouts/
+__pycache__/
+log.txt
 config.ini
