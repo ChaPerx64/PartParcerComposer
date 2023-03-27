@@ -72,7 +72,9 @@ class BlanksHandler:
         bparser = BlanksParser(b_path, self.params)
         order_sheet = bparser.get_copy()
         matcher = EntryMatcher(bparser.get_filters(), sparser.get_flat_unformatted(), self.params)
-        if not matcher.errors:
+        if matcher.errors:
+            return matcher.errors
+        else:
             i = 4
             for entry in matcher.get_matches():
                 order_sheet.cell(row=i, column=1).value = i - 3
@@ -90,6 +92,8 @@ class BlanksHandler:
 
     def form_order_fromind(self, list_no: int, spec_path, path_destination):
         order_sheet = self.fill_blank(self.found_blanks[list_no], spec_path)
+        if type(order_sheet) == type(list()):
+            return order_sheet
         order_sheet = self.format_sheet(order_sheet)
         order_sheet.parent.save(path_destination)
 
