@@ -36,7 +36,7 @@ class BlanksHandler:
                     parser = BlanksParser(joint_path, self.params)
                     if parser.is_pp():
                         blanks_pathlist.append(joint_path)
-        if len(blanks_pathlist) == 0:
+        if not blanks_pathlist:
             raise FileNotFoundError("Файлов бланков не найдено!")
         return blanks_pathlist
 
@@ -84,11 +84,6 @@ class BlanksHandler:
                     j += 1
                 i += 1
             return order_sheet
-        else:
-            out_list = list()
-            for item in matcher.errors:
-                out_list.append({self.params.get('KEY_1'): item})
-            return out_list
 
     def form_order_fromind(self, list_no: int, spec_path, path_destination):
         order_sheet = self.fill_blank(self.found_blanks[list_no], spec_path)
@@ -100,34 +95,3 @@ class BlanksHandler:
     def form_order_fromname(self, blankname, spec_path, path_destination):
         if blankname in self.blanks_names:
             return self.form_order_fromind(self.blanks_names.index(blankname), spec_path, path_destination)
-
-
-
-
-# Для тестов
-if __name__ == '__main__':
-    from configparser import ConfigParser
-
-    configur = ConfigParser()
-    configur.read('config.ini')
-    configur_now = {'blanks_path': configur.get("paths", "blanks_path"),
-                    'PP_HEADER': configur.get("variables", "PP_HEADER"),
-                    '<PRODUCT>': 'Стеллаж',
-                    '<AUTHOR>': 'Пар-оол Ч.А.',
-                    '<DOCS_FOLDER>': configur.get("common folders", "folder_2"),
-                    '<DATE_OF_ISSUE>': str(datetime.date.today()),
-                    '<OTHER>': '',
-                    'PP_NUMBER': 'Номер',
-                    'POSITION_MARKER': 'Поз.',
-                    'QUANTITY_MARKER': 'Кол-во',
-                    'KEY_1': 'Обозначение',
-                    'KEY_2': 'Наименование'
-                    }
-    bhandler = BlanksHandler(configur_now)
-    index_yo = 5
-    spec_path = './Пример спеки/Familia Rack.xlsx'
-    new_ls = spec_path.split('.')
-    new_ls[1] = new_ls[1] + ' ' + '_'.join(
-        (str(time.gmtime().tm_hour), str(time.gmtime().tm_min), str(time.gmtime().tm_sec)))
-    new_path = '.'.join(new_ls)
-    bhandler.form_order_fromind(index_yo, spec_path, new_path)
