@@ -81,6 +81,7 @@ class WinConstructor:
 
     def get_window(self, winname: str, config_dict: dict):
         self._config_dict = config_dict
+        layout = []
         if winname == 'main':
             layout = self.get_main_layout()
             el_just = 'left'
