@@ -29,10 +29,10 @@ class BlanksHandler:
         Ищет файлы бланков в директории, прописанной в конфиге
         """
         blanks_pathlist = []
-        with os.scandir(path=self.search_range) as directory:
+        with os.scandir(path=self.params.get("blanks_path")) as directory:
             for entry in directory:
                 if ".xlsx" in entry.name and not '~$' in entry.name:
-                    joint_path = '/'.join((self.search_range, entry.name))
+                    joint_path = '/'.join((self.params.get("blanks_path"), entry.name))
                     parser = BlanksParser(joint_path, self.params)
                     if parser.is_pp():
                         blanks_pathlist.append(joint_path)
