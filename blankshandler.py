@@ -63,7 +63,8 @@ class BlanksHandler:
             for cell in row:
                 if cell.value:
                     for key, value in self.params.items():
-                        cell.value = str(cell.value).replace(key, value)
+                        if '<' in key and '>' in key:
+                            cell.value = str(cell.value).replace(key, value)
         return sheet
 
     def fill_blank(self, b_path, spec_path):
