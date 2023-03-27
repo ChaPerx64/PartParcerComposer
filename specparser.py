@@ -86,7 +86,10 @@ class SpecParser:
         mplicators_ls = [1]
         counted_list = list()
         for entry in self.get_entries():
-            qty = int(entry[self.qty_key])
+            qty = entry[self.qty_key]
+            if qty == '-':
+                continue
+            qty = int(qty)
             depth = str(entry[self.pos_key]).count('.')
             if prev_depth < depth:
                 mplicators_ls.append(prev_qty)
@@ -96,7 +99,7 @@ class SpecParser:
             mplicator = 1
             for a in mplicators_ls:
                 mplicator = mplicator * a
-            entry[self.qty_key] = str(qty * mplicator)
+            entry[self.qty_key] = qty * mplicator
             counted_list.append(entry)
             prev_qty = qty
             prev_depth = depth
