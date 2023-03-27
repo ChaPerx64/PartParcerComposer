@@ -15,12 +15,21 @@ class WinConstructor:
         self._config_dict = dict()
         self.bhandler = bhandler
 
-    def _b_cb_layout(self):
-        out_list = list()
+    def _main_rcolumn_lout(self):
+        out_list = [
+            [sg.Text("Выбери бланки для заполнения из стандартных", font=_H2_FONT)]
+        ]
         i = 0
         for entry in self.bhandler.get_blanks_names():
             out_list.append([sg.Checkbox(entry, key=entry, font=_SMALL_FONT)])
             i += 1
+        out_list.append(
+            [sg.Checkbox("Кастомный бланк:", font=_SMALL_FONT, key='-CUSTOMBLANK_CB-'),
+             sg.In(key='-SPECSAVE-', expand_x=True, tooltip=_BLANKTIP, font=_SMALL_FONT),
+             sg.FileBrowse(key='-SBrowse-')]
+        )
+        out_list.append([sg.VPush()])
+        out_list.append([sg.Push(), sg.Button("Парсить"), sg.Push(), sg.Button('Config')])
         return out_list
 
     def _params_list_layout(self):
@@ -39,33 +48,36 @@ class WinConstructor:
     def get_main_layout(self):
         return [
             [sg.VPush()],
-            [sg.Push(), sg.Text("Welcome to PartParser!", font=_H1_FONT), sg.Push()],
-            [sg.Push(), sg.Text("Формирование заказа", font=_H2_FONT), sg.Push()],
-            [sg.HSeparator()],
-            [sg.Text('Введи наименование изделия', font=_H2_FONT)],
-            [sg.In(key='-PROJECTNAME-', expand_x=True, tooltip=_SPECTIP)],
-            [sg.HSeparator()],
-            [sg.Text("Выбери эксель-файл спецификации", font=_H2_FONT)],
-            [sg.In(key='-XLSX-', expand_x=True, tooltip=_SPECTIP), sg.FileBrowse(key='-XBrowse-')],
-            [sg.HSeparator()],
-            [sg.Text("Выбери бланки для заполнения из стандартных", font=_H2_FONT)],
-            self._b_cb_layout(),
-            [sg.Checkbox("Кастомный бланк:", font=_SMALL_FONT, key='-CUSTOMBLANK_CB-'),
-             sg.In(key='-SPECSAVE-', expand_x=True, tooltip=_BLANKTIP, font=_SMALL_FONT),
-             sg.FileBrowse(key='-SBrowse-')],
-            [sg.HSeparator()],
-            [sg.Text('Данные для заполнения', font=_H2_FONT)],
-            [sg.Text('Путь к документации', font=_SMALL_FONT),
-             sg.In(key='-SPECSAVE-', expand_x=True, tooltip=_BLANKTIP, font=_SMALL_FONT),
-             sg.FileBrowse()
-             ],
-            [sg.HSeparator()],
-            [sg.Text("Сохранение результата", font=_H2_FONT)],
-            [sg.Checkbox('Сохранить в подпапке "/дата-время"', key='-DEFSAVE-', enable_events=True, default=True)],
-            [sg.Text("Или выбери другое место")],
-            [sg.In(enable_events=True, key="-SaveFolder-", expand_x=True, disabled=True),
-             sg.FolderBrowse(key='-FBrowse-', disabled=True)],
-            [sg.Push(), sg.Button("Парсить"), sg.Push(), sg.Button('config')],
+            [
+                sg.Push(),
+                sg.Column(
+                    [
+                        [sg.Push(), sg.Text("Welcome to PartParser!", font=_H1_FONT), sg.Push()],
+                        [sg.Push(), sg.Text("Формирование заказа", font=_H2_FONT), sg.Push()],
+                        [sg.HSeparator()],
+                        [sg.Text('Введи наименование изделия', font=_H2_FONT)],
+                        [sg.In(key='-PRODUCTNAME-', expand_x=True, tooltip=_SPECTIP)],
+                        [sg.HSeparator()],
+                        [sg.Text("Выбери эксель-файл спецификации", font=_H2_FONT)],
+                        [sg.In(key='-XLSX-', expand_x=True, tooltip=_SPECTIP), sg.FileBrowse(key='-XBrowse-')],
+                        [sg.HSeparator()],
+                        [sg.Text('Данные для заполнения', font=_H2_FONT)],
+                        [sg.Text('Путь к документации', font=_SMALL_FONT),
+                         sg.In(key='-SPECSAVE-', expand_x=True, tooltip=_BLANKTIP, font=_SMALL_FONT),
+                         sg.FileBrowse()
+                         ],
+                        [sg.HSeparator()],
+                        [sg.Text("Сохранение результата", font=_H2_FONT)],
+                        [sg.Checkbox('Сохранить в подпапке "/дата-время"', key='-DEFSAVE-', enable_events=True, default=True)],
+                        [sg.Text("Или выбери другое место")],
+                        [sg.In(enable_events=True, key="-SAVEFOLDER-", expand_x=True, disabled=True),
+                         sg.FolderBrowse(key='-FBrowse-', disabled=True)]
+                    ]
+                ),
+                sg.VSeperator(),
+                sg.Column(self._main_rcolumn_lout()),
+                sg.Push()
+            ],
             [sg.VPush()]
         ]
 
