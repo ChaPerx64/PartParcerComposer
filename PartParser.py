@@ -35,10 +35,10 @@ def spec_finder():
 
 
 # Функция, вытаскивающая детали из листа эксель, и распределяющая их по спискам
-def parts_list_exctractor(worksheet, laser_list: list, tokar_list: list):
+def parts_list_exctractor(worksheet):
     coord = file_checker(worksheet)
     if coord is None:
-        return laser_list, tokar_list
+        return None
     i = 0
     parts_list = list()
     for row in worksheet.rows:
@@ -49,13 +49,22 @@ def parts_list_exctractor(worksheet, laser_list: list, tokar_list: list):
         for item in COL_NAMES:
             part_prop.update({item: row[coord[item]].value})
         parts_list.append(part_prop)
+    laser_list = list()
+    tokar_list = list()
+    sb_list = list()
     for part in parts_list:
         if not part['marsh'] is None:
             if 'Лазер' in str(part['marsh']):
                 laser_list = add_part_to_list(laser_list, part)
             if 'Токар' in str(part['marsh']):
                 tokar_list = add_part_to_list(tokar_list, part)
-    return laser_list, tokar_list
+            if 'Сборка' in str(part['marsh']):
+                sb_list = add_part_to_list(sb_list, part)
+    return {
+        'ls_laser': laser_list,
+        'ls_tokar': tokar_list,
+        'ls_sb': sb_list
+    }
 
 
 def add_part_to_list(partlist: list, new_part: dict):
@@ -110,7 +119,7 @@ def file_scanner(extention: str):
 
 # Функция, которая ищет доки в листе доков для соответствующих деталей из списка деталей
 # и возвращает список путей к этим докам, прицепив поле с заданным ключом в исходном словаре
-def matchmaker(partslist: list, doclist: list, ext: str, lookformain=False):
+def matchmaker(partslist: list, doclist: list, ext: str, lookformain=False, add_sb=False):
     ext = ext.lower()
     endline = ' ' + ext + '.'
     for part in partslist:
@@ -118,6 +127,26 @@ def matchmaker(partslist: list, doclist: list, ext: str, lookformain=False):
         for doc in doclist:
             if doc[0] == part[COL_NAMES[0]]:
                 pathlist.append(doc[1])
+
+        # ПРОБУЕМ ИСКАТЬ БЕЗ ' СБ'
+        ls_length = len(pathlist)
+        if ls_length == 0 and ' СБ' in part[COL_NAMES[0]]:
+            print(BColors.YELLOW + 'Для детали ' + part[COL_NAMES[0]] + ' не найдено' + endline + BColors.ENDC)
+            if add_sb:
+                print('Пробую найти без СБ...')
+                sbname = str(part[COL_NAMES[0]]).replace(' СБ', '')
+                log_out_txt(
+                    'Для детали ' + part[COL_NAMES[0]] + ' выполнялся поиск чертежа без СБ по обозначению: ' +
+                    sbname + '\n'
+                )
+                for doc in doclist:
+                    if doc[0] == sbname:
+                        pathlist.append(doc[1])
+            else:
+                print('Поиск чертежа без СБ не выполнялся')
+                log_out_txt(
+                    'Для детали ' + part[COL_NAMES[0]] + ' поиск чертежа без СБ не выполнялся\n'
+                )
 
         # ПЕРВАЯ ОЦЕНКА КОЛИЧЕСТВА НАЙДЕННЫХ ФАЙЛОВ ДЛЯ ПОИСКА ГРУППОВЫХ ЧЕРТЕЖЕЙ
         ls_length = len(pathlist)
@@ -139,7 +168,6 @@ def matchmaker(partslist: list, doclist: list, ext: str, lookformain=False):
                     'Для детали ' + part[COL_NAMES[0]] + ' поиск группового чертежа не выполнялся\n'
                 )
 
-
         # ОКОНЧАТЕЛЬНАЯ ОЦЕНКА КОЛИЧЕСТВА НАЙДЕННЫХ ФАЙЛОВ
         ls_length = len(pathlist)
         if ls_length == 0:
@@ -151,6 +179,9 @@ def matchmaker(partslist: list, doclist: list, ext: str, lookformain=False):
                     COL_NAMES[0]] + ' обнаружен единственный' + endline + BColors.ENDC +
                 '\nВыбран файл из директории: ' + pathlist[0]
             )
+            log_out_txt(
+                'Найден файл: ' + str(pathlist[0]) + '\n\n'
+            )
             part.update({ext: pathlist[0]})
         else:
             youngest_file_datetime = 0
@@ -159,6 +190,9 @@ def matchmaker(partslist: list, doclist: list, ext: str, lookformain=False):
                     youngest_file_path = path
                     youngest_file_datetime = os.path.getmtime(path)
             part.update({ext: youngest_file_path})
+            log_out_txt(
+                'Найдено несколько файлов. Выбран: ' + str(youngest_file_path) + '\n\n'
+            )
             print(
                 BColors.YELLOW + part[COL_NAMES[0]] + '  -----  Обнаружено ' + str(ls_length) + endline + BColors.ENDC +
                 '\nВыбран файл из директории: ' + youngest_file_path +
@@ -215,33 +249,35 @@ if __name__ == '__main__':
     print('Обнаружен файл ' + spec_finder() + '.\n')
 
     # СОЗДАНИЕ СПИСКОВ ДЕТАЛЕЙ НА ТОКАРКУ И ЛАЗЕРКУ ИЗ РАБОЧИХ ЛИСТОВ
-    ls_laser = []
-    ls_tokar = []
     for sheetname in speca.sheetnames:
         active_ws = speca[sheetname]
-        ls_laser, ls_tokar = parts_list_exctractor(active_ws, ls_laser, ls_tokar)
-        # if ls_laser is None or ls_tokar is None:
-        #     continue
+        parts_dict = parts_list_exctractor(active_ws)
         log_out_txt(
             '\nЛист "' + sheetname + '"\n'
         )
         print('Читаю лист ' + sheetname)
 
-    if len(ls_laser) != 0:
+    if len(parts_dict['ls_laser']) != 0:
         print("\nСписок деталей, отмеченных для лазера:")
-        for item in ls_laser:
+        for item in parts_dict['ls_laser']:
             for value in item.values():
                 print(value, end='              ')
             print()
-    if len(ls_tokar) != 0:
+    if len(parts_dict['ls_tokar']) != 0:
         print("\nСписок деталей, отмеченных для токарки:")
-        for item in ls_tokar:
+        for item in parts_dict['ls_tokar']:
+            for value in item.values():
+                print(value, end='              ')
+            print()
+    if len(parts_dict['ls_sb']) != 0:
+        print("\nСписок деталей, отмеченных для сборки:")
+        for item in parts_dict['ls_sb']:
             for value in item.values():
                 print(value, end='              ')
             print()
 
     # ОБРАБОТКА ОШИБКИ ПУСТОГО ИЛИ НЕКОРРЕКТНОГО XLSX ФАЙЛА
-    if len(ls_laser) == 0 and len(ls_tokar) == 0:
+    if not any(parts_dict.values()):
         screen_holder('Найденный файл не является файлом спецификации или неверно отформатирован')
         raise FileNotFoundError('Найденный файл не является файлом спецификации или неверно отформатирован')
 
@@ -249,7 +285,7 @@ if __name__ == '__main__':
     print('\nИщу документы, соответствующие обозначению...')
     pdf_files = file_scanner('pdf')
     dxf_files = file_scanner('dxf')
-    if len(pdf_files) == 0 or (len(ls_laser) != 0 and len(dxf_files) == 0):
+    if len(pdf_files) == 0 or (len(parts_dict['ls_laser']) != 0 and len(dxf_files) == 0):
         screen_holder(
             BColors.WARNING + 'ОШИБКА: Данная директория не содержит файлы pdf или dxf' + BColors.ENDC
         )
@@ -264,7 +300,7 @@ if __name__ == '__main__':
     # ПОИСК ДОКОВ ДЛЯ ТОКАРКИ
     log_out_txt("\nТОКАРКА, PDF\n")
     print('\nИщу КД на детали, помеченные для токарки...')
-    ls_tokar = matchmaker(ls_tokar, pdf_files, 'pdf', lookformain=True)
+    ls_tokar = matchmaker(parts_dict['ls_tokar'], pdf_files, 'pdf', lookformain=True)
     print('\nКопирую обнаруженные файлы токарки в созданную директорию...')
     files_copier(ls_tokar, 'pdf', os.path.join(new_folder_path, 'Токарка/'))
     print('Копирование завершено')
@@ -272,12 +308,19 @@ if __name__ == '__main__':
     # ПОИСК ДОКОВ ДЛЯ ЛАЗЕРА
     log_out_txt("\nЛАЗЕРКА, PDF\n")
     print('\nИщу КД на детали, помеченные для лазера...')
-    ls_laser = matchmaker(ls_laser, pdf_files, 'pdf', lookformain=True)
-    files_copier(ls_laser, 'pdf', os.path.join(new_folder_path, 'Лазер/PDF/'))
+    ls_laser = matchmaker(parts_dict['ls_laser'], pdf_files, 'pdf', lookformain=True)
+    files_copier(ls_laser, 'pdf', os.path.join(new_folder_path, 'Лазер/'))
     log_out_txt("\nЛАЗЕРКА, DXF\n")
     ls_laser = matchmaker(ls_laser, dxf_files, 'dxf')
-    files_copier(ls_laser, 'dxf', os.path.join(new_folder_path, 'Лазер/DXF/'))
+    files_copier(ls_laser, 'dxf', os.path.join(new_folder_path, 'Лазер/'))
 
+    # ПОИСК ДОКОВ ДЛЯ СБОРКИ
+    log_out_txt("\nСБОРКА, PDF\n")
+    print('\nИщу КД на детали, помеченные для сборки...')
+    ls_sb = matchmaker(parts_dict['ls_sb'], pdf_files, 'pdf', lookformain=True, add_sb=True)
+    print('\nКопирую обнаруженные файлы сборки в созданную директорию...')
+    files_copier(ls_sb, 'pdf', os.path.join(new_folder_path, 'Сборка/'))
+    print('Копирование завершено')
 
 
     print('Копирование завершено')
