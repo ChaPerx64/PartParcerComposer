@@ -10,19 +10,24 @@ from entrymatcher import EntryMatcher
 from aux_code import filename_from_path
 
 
-# Класс BlankHandler, занимающийся сбором и анализом xlsx-бланков заказов
 class BlanksHandler:
-    # При инициализации объекта класса, нужно скормить ему объект класса ConfigParser модуля сonfigparser,
-    # инициализированный через ConfigParser.read('path')
+    """
+    Класс BlankHandler, занимающийся сбором и анализом xlsx-бланков заказов
+    """
+
     def __init__(self, params: dict):
-        self.search_range = params.get("blanks_path")
-        self.PP_HEADER = params.get("PP_HEADER")
+        """
+        При инициализации объекта класса, нужно скормить ему объект класса ConfigParser модуля сonfigparser,
+        инициализированный через ConfigParser.read('path')
+        """
         self.params = params
         self.found_blanks = self.get_blanks_paths()
         self.blanks_names = self.get_blanks_names()
 
-    # Ищет файлы бланков в директории, прописанной в конфиге
     def get_blanks_paths(self):
+        """
+        Ищет файлы бланков в директории, прописанной в конфиге
+        """
         blanks_pathlist = []
         with os.scandir(path=self.search_range) as directory:
             for entry in directory:
