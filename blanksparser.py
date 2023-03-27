@@ -6,7 +6,7 @@ class BlanksParser:
     def __init__(self, xl_path, params: dict):
         self.path = xl_path
         self.sheet = self._load_first_sheet()
-        self.pp_number = params.get('PP_NUMBER')
+        self.pp_number = params.get('NUMBER_MARKER')
         self.pp_header = params.get('PP_HEADER')
 
     def _load_first_sheet(self):
