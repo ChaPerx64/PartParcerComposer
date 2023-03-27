@@ -1,9 +1,12 @@
 from configparser import ConfigParser
 import PySimpleGUI as sg
 
+
 class ConfigHandler:
     def __init__(self, path: str):
-        self.path = path
+        self._path = path
+        self._dict = None
+        self._parser = ConfigParser()
 
 
 def touch_config(force_create=False):
