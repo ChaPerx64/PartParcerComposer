@@ -24,8 +24,8 @@ class WinConstructor:
             out_list.append([sg.Checkbox(entry, key=entry, font=_SMALL_FONT)])
             i += 1
         out_list.append(
-            [sg.Checkbox("Кастомный бланк:", font=_SMALL_FONT, key='-CUSTOMBLANK_CB-'),
-             sg.In(key='-SPECSAVE-', expand_x=True, tooltip=_BLANKTIP, font=_SMALL_FONT),
+            [sg.Checkbox("Кастомный бланк:", key="Кастомный бланк:", font=_SMALL_FONT),
+             sg.In(key='-CUSTOMBLANK-', expand_x=True, tooltip=_BLANKTIP, font=_SMALL_FONT),
              sg.FileBrowse(key='-SBrowse-')]
         )
         out_list.append([sg.VPush()])
@@ -63,7 +63,7 @@ class WinConstructor:
                         [sg.HSeparator()],
                         [sg.Text('Данные для заполнения', font=_H2_FONT)],
                         [sg.Text('Путь к документации', font=_SMALL_FONT),
-                         sg.In(key='-SPECSAVE-', expand_x=True, tooltip=_BLANKTIP, font=_SMALL_FONT),
+                         sg.In(key='-CADPATH-', expand_x=True, tooltip=_BLANKTIP, font=_SMALL_FONT),
                          sg.FileBrowse()
                          ],
                         [sg.HSeparator()],

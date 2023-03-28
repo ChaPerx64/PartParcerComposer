@@ -22,7 +22,6 @@ class GUIReactor:
         self._values = values
         self._window = window
         self._params = params
-        # self._bhandler = bhandler
         self._br_flag = None
         self._newwindow = None
         if event == '-DEFSAVE-':
@@ -47,33 +46,49 @@ class GUIReactor:
         self._window['-FBrowse-'].update(disabled=self._savedisabled)
 
     def parse_check(self):
-        # check 1
+        """Функция, проверяющая ввод данных пользователем"""
+
+        '''Проверка ввода данных, используемых для масок'''
         if self._values['-PRODUCTNAME-']:
-            self._params.update({'<PRODUCT>': self._values['-PRODUCTNAME-']})
+            self._params.update({'<PRODUCTNAME>': self._values['-PRODUCTNAME-']})
         else:
             return 'Введи наименование изделия'
-        # check 2
+
+        '''Проверка ввода пути исходной спеки'''
         if self._values['-XLSX-']:
             self._params.update({'XLSXPATH': self._values['-XLSX-']})
         else:
             return 'Укажи исходную спецификацию'
-        # check 3
+
+        '''Проверка ввода пути к модели, для маски в таблице'''
+        if self._values.get('-CADPATH-'):
+            self._params.update({'CADPATH': self._values['-CADPATH-']})
+        else:
+            return 'Не введён путь к документации (справочный)'
+
+        '''Проверка врода данных о пути сохранения заказов'''
         if self._values['-DEFSAVE-']:
             self._params.update({'SAVEPATH': curr_dt_subfolder(self._values['-XLSX-'])})
         elif self._values['-SAVEFOLDER-']:
             self._params.update({'SAVEPATH': self._values['-SAVEFOLDER-']})
         else:
             return 'Выбери путь для сохранения'
-        # check 4
+
+        '''Проверка выбора путей для сохранения'''
         parse_list = list()
         self._bhandler = BlanksHandler(self._params)
+        # Проверяет чекбоксы со спеками
         for blankname in self._bhandler.get_blanks_names():
             if self._values[blankname]:
                 parse_list.append(blankname)
+        if not (parse_list or self._values['Кастомный бланк:']):
+            return 'Не выбран ни один бланк для заполнения'
+        if self._values['Кастомный бланк:']:
+            parse_list.append(self._values['-CUSTOMBLANK-'])
         if parse_list:
             self._params.update({'PARSELIST': parse_list})
-        else:
-            return 'Не выбран ни один бланк для заполнения'
+
+        '''Возвращает None, если все условия выше не сработали (Ошибки не обнаружены)'''
         return None
 
     def parse(self):
@@ -81,7 +96,7 @@ class GUIReactor:
         os.makedirs(self._params.get('SAVEPATH'), exist_ok=True)
         for blank in self._params.get('PARSELIST'):
             status_string += '\n' + str(blank) + ':\n'
-            new_path = new_filepath(self._params.get('<PRODUCT>'), self._params.get('SAVEPATH'), blank)
+            new_path = new_filepath(self._params.get('<PRODUCTNAME>'), self._params.get('SAVEPATH'), blank)
             out = self._bhandler.form_order_fromname(blank, self._params.get('XLSXPATH'), new_path)
             if out:
                 for item in out:
