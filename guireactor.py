@@ -1,7 +1,8 @@
 import PySimpleGUI as sg
 from blankshandler import BlanksHandler
 from aux_code import curr_dt_subfolder, new_filepath
-from confighandler import touch_config
+from cadpathhandler import CADPathHandler
+from confighandler import config_save
 import os
 
 
@@ -25,32 +26,38 @@ class GUIReactor:
         self._br_flag = None
         self._newwindow = None
         if event == '-DEFSAVE-':
-            self.flip_save()
+            self._flip_save()
         if event == 'Парсить':
-            err_message = self.parse_check()
+            err_message = self._parse_check()
             if not err_message:
-                self.parse()
+                self._parse()
             else:
                 sg.popup_error(err_message)
-        if event == "config":
+        if event == "Config":
             self._newwindow = 'config'
         if event == "-GOHOME-":
             self._newwindow = 'main'
         if event in ("Exit", sg.WIN_CLOSED):
             self._br_flag = True
+        if event == "-SAVECONFIG-":
+            self._save_config()
         return self._br_flag, self._newwindow
 
-    def flip_save(self):
+    def _flip_save(self):
         self._savedisabled = not self._savedisabled
         self._window['-SAVEFOLDER-'].update(disabled=self._savedisabled)
         self._window['-FBrowse-'].update(disabled=self._savedisabled)
 
-    def parse_check(self):
+    def _parse_check(self):
         """Функция, проверяющая ввод данных пользователем"""
+
+        chandler = CADPathHandler(self._params.get('CADFOLDER_PATH'))
+        masks = self._params['MASKS']
+        masks_values = self._params['MASKS_VALUES']
 
         '''Проверка ввода данных, используемых для масок'''
         if self._values['-PRODUCTNAME-']:
-            self._params.update({'<PRODUCTNAME>': self._values['-PRODUCTNAME-']})
+            masks_values.update({masks['PRODUCTNAME_MASK']: self._values['-PRODUCTNAME-']})
         else:
             return 'Введи наименование изделия'
 
@@ -61,8 +68,8 @@ class GUIReactor:
             return 'Укажи исходную спецификацию'
 
         '''Проверка ввода пути к модели, для маски в таблице'''
-        if self._values.get('-CADPATH-'):
-            self._params.update({'CADPATH': self._values['-CADPATH-']})
+        if self._values['-DOCSFOLDER-']:
+            masks_values.update({masks['DOCSFOLDER_MASK']: chandler.strip_to_cadfolder(self._values['-DOCSFOLDER-'])})
         else:
             return 'Не введён путь к документации (справочный)'
 
@@ -91,12 +98,16 @@ class GUIReactor:
         '''Возвращает None, если все условия выше не сработали (Ошибки не обнаружены)'''
         return None
 
-    def parse(self):
+    def _parse(self):
         status_string = 'Результаты парсинга:\n'
         os.makedirs(self._params.get('SAVEPATH'), exist_ok=True)
         for blank in self._params.get('PARSELIST'):
             status_string += '\n' + str(blank) + ':\n'
-            new_path = new_filepath(self._params.get('<PRODUCTNAME>'), self._params.get('SAVEPATH'), blank)
+            new_path = new_filepath(
+                self._params['MASKS_VALUES'][self._params['MASKS']['PRODUCTNAME_MASK']],
+                self._params.get('SAVEPATH'),
+                blank
+            )
             out = self._bhandler.form_order_fromname(blank, self._params.get('XLSXPATH'), new_path)
             if out:
                 for item in out:
@@ -106,5 +117,8 @@ class GUIReactor:
         sg.popup_ok(status_string)
         self._br_flag = True
 
-    def t_config(self):
-        self._newwindow = 'config'
+    def _save_config(self):
+        for label, values in self._params.items():
+            if 'MASKS' not in label:
+                self._params.update({label: self._values[label]})
+        config_save(self._params)

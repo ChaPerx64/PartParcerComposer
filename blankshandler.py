@@ -20,7 +20,7 @@ class BlanksHandler:
         При инициализации объекта класса, нужно скормить ему объект класса ConfigParser модуля сonfigparser,
         инициализированный через ConfigParser.read('path')
         """
-        self.params = params
+        self._params = params
         self.found_blanks = self.get_blanks_paths()
         self.blanks_names = self.get_blanks_names()
 
@@ -29,11 +29,11 @@ class BlanksHandler:
         Ищет файлы бланков в директории, прописанной в конфиге
         """
         blanks_pathlist = []
-        with os.scandir(path=self.params.get("blanks_path")) as directory:
+        with os.scandir(path=self._params.get('BLANKS_PATH')) as directory:
             for entry in directory:
                 if ".xlsx" in entry.name and not '~$' in entry.name:
-                    joint_path = '/'.join((self.params.get("blanks_path"), entry.name))
-                    parser = BlanksParser(joint_path, self.params)
+                    joint_path = '/'.join((self._params.get('BLANKS_PATH'), entry.name))
+                    parser = BlanksParser(joint_path, self._params)
                     if parser.is_pp():
                         blanks_pathlist.append(joint_path)
         if not blanks_pathlist:
@@ -47,7 +47,7 @@ class BlanksHandler:
         return out_ls
 
     def get_copy_wbws(self, source_path):
-        bparser = BlanksParser(source_path, self.params)
+        bparser = BlanksParser(source_path, self._params)
         new_wb_ws = bparser.get_copy()
         return new_wb_ws
 
@@ -58,20 +58,27 @@ class BlanksHandler:
 
     def format_sheet(self, sheet):
         sheet.delete_rows(1)
-        sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=sheet.max_column)
+        if str(self._params['MERGETOCOLUMN']).isdigit():
+            merge_edge = int(self._params['MERGETOCOLUMN'])
+            if merge_edge != 0:
+                sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=merge_edge)
+        else:
+            sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=sheet.max_column)
         for row in sheet:
             for cell in row:
                 if cell.value:
-                    for key, value in self.params.items():
-                        if '<' in key and '>' in key:
+                    for key, value in self._params['MASKS_VALUES'].items():
+                        if value:
                             cell.value = str(cell.value).replace(key, value)
+                        else:
+                            cell.value = str(cell.value).replace(key, '')
         return sheet
 
     def fill_blank(self, b_path, spec_path):
-        sparser = SpecParser(spec_path, self.params)
-        bparser = BlanksParser(b_path, self.params)
+        sparser = SpecParser(spec_path, self._params)
+        bparser = BlanksParser(b_path, self._params)
         order_sheet = bparser.get_copy()
-        matcher = EntryMatcher(bparser.get_filters(), sparser.get_flat_unformatted(), self.params)
+        matcher = EntryMatcher(bparser.get_filters(), sparser.get_flat_unformatted(), self._params)
         if matcher.errors:
             return matcher.errors
         else:

@@ -42,7 +42,3 @@ def curr_dt_subfolder(orig_path: str):
     new_path = 'Заказы ' + new_path
     new_path = '/'.join(orig_slices + [new_path]) + '/'
     return new_path
-
-
-def key_from_listitem():
-    pass
