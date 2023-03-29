@@ -3,5 +3,7 @@
 Пример спеки/
 layouts/
 __pycache__/
+build/
+main.spec
 log.txt
 config.ini

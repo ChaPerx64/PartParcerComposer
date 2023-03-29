@@ -51,7 +51,7 @@ class WinConstructor:
                 sg.Push(),
                 sg.Column(
                     [
-                        [sg.Push(), sg.Text("Welcome to PartParser!", font=_H1_FONT), sg.Push()],
+                        [sg.Push(), sg.Text("Welcome to SpecParser!", font=_H1_FONT), sg.Push()],
                         [sg.Push(), sg.Text("Формирование заказа", font=_H2_FONT), sg.Push()],
                         [sg.HSeparator()],
                         [sg.Text('Введи наименование изделия', font=_H2_FONT)],
@@ -87,7 +87,7 @@ class WinConstructor:
     def get_config_layout(self):
         return [
             [sg.VPush()],
-            [sg.Push(), sg.Text('Настройки PartParser', font=_H1_FONT), sg.Push()],
+            [sg.Push(), sg.Text('Настройки SpecParser', font=_H1_FONT), sg.Push()],
             [sg.VPush()],
             [sg.Text('Параметры')],
             [sg.Push(), *self._params_list_layout(), sg.Push()],
