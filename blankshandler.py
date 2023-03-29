@@ -102,3 +102,10 @@ class BlanksHandler:
     def form_order_fromname(self, blankname, spec_path, path_destination):
         if blankname in self.blanks_names:
             return self.form_order_fromind(self.blanks_names.index(blankname), spec_path, path_destination)
+
+    def form_order_from_path(self, blank_path, spec_path, path_destination):
+        order_sheet = self.fill_blank(blank_path, spec_path)
+        if isinstance(order_sheet, list):
+            return order_sheet
+        order_sheet = self.format_sheet(order_sheet)
+        order_sheet.parent.save(path_destination)

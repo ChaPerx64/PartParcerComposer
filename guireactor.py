@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 from blankshandler import BlanksHandler
-from aux_code import curr_dt_subfolder, new_filepath
+from aux_code import curr_dt_subfolder, new_filepath, filename_from_path
 from cadpathhandler import CADPathHandler
 from confighandler import config_save
 import os
@@ -81,7 +81,7 @@ class GUIReactor:
         else:
             return 'Выбери путь для сохранения'
 
-        '''Проверка выбора путей для сохранения'''
+        '''Проверка выбора бланками для сохранения'''
         parse_list = list()
         self._bhandler = BlanksHandler(self._params)
         # Проверяет чекбоксы со спеками
@@ -91,7 +91,7 @@ class GUIReactor:
         if not (parse_list or self._values['Кастомный бланк:']):
             return 'Не выбран ни один бланк для заполнения'
         if self._values['Кастомный бланк:']:
-            parse_list.append(self._values['-CUSTOMBLANK-'])
+            self._params.update({'CUSTOMBLANK': self._values['-CUSTOMBLANK-']})
         if parse_list:
             self._params.update({'PARSELIST': parse_list})
 
@@ -101,14 +101,30 @@ class GUIReactor:
     def _parse(self):
         status_string = 'Результаты парсинга:\n'
         os.makedirs(self._params.get('SAVEPATH'), exist_ok=True)
-        for blank in self._params.get('PARSELIST'):
-            status_string += '\n' + str(blank) + ':\n'
+        if self._params.get('PARSELIST'):
+            for blank in self._params.get('PARSELIST'):
+                status_string += '\n' + str(blank) + ':\n'
+                new_path = new_filepath(
+                    self._params['MASKS_VALUES'][self._params.get('MASKS').get('PRODUCTNAME_MASK')],
+                    self._params.get('SAVEPATH'),
+                    blank
+                )
+                out = self._bhandler.form_order_fromname(blank, self._params.get('XLSXPATH'), new_path)
+                if out:
+                    for item in out:
+                        status_string += str(item) + '\n'
+                else:
+                    status_string += 'Спарсено успешно!\n'
+        if self._params.get('CUSTOMBLANK'):
+            status_string += '\nКастомный бланк:\n'
             new_path = new_filepath(
-                self._params['MASKS_VALUES'][self._params['MASKS']['PRODUCTNAME_MASK']],
+                self._params['MASKS_VALUES'][self._params.get('MASKS').get('PRODUCTNAME_MASK')],
                 self._params.get('SAVEPATH'),
-                blank
+                filename_from_path(self._params.get('CUSTOMBLANK'))
             )
-            out = self._bhandler.form_order_fromname(blank, self._params.get('XLSXPATH'), new_path)
+            out = self._bhandler.form_order_from_path(
+                self._params.get('CUSTOMBLANK'), self._params.get('XLSXPATH'), new_path
+            )
             if out:
                 for item in out:
                     status_string += str(item) + '\n'
@@ -121,4 +137,7 @@ class GUIReactor:
         for label, values in self._params.items():
             if 'MASKS' not in label:
                 self._params.update({label: self._values[label]})
+        for label, values in self._params.get('MASKS').items():
+            self._params['MASKS'].update({label: self._values[label]})
         config_save(self._params)
+        sg.popup_ok('Конфиг сохранён')
