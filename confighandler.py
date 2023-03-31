@@ -2,7 +2,7 @@ from configparser import ConfigParser
 import datetime
 
 _DEFAULT_CONFIG = '''[vars]
-cadfolder_path = D:/Workfolder/Workfolder_CAD/Photomechanics/GrabCAD
+cadfolder_path = C:/
 blanks_path = ./Бланки
 pp_header = PP_BLANK
 position_marker = Поз.

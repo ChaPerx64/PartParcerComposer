@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 from blankshandler import BlanksHandler
 from aux_code import curr_dt_subfolder, new_filepath, filename_from_path
 from cadpathhandler import CADPathHandler
-from confighandler import config_save
+from confighandler import config_save, touch_config
 import os
 
 
@@ -41,6 +41,13 @@ class GUIReactor:
             self._br_flag = True
         if event == "-SAVECONFIG-":
             self._save_config()
+        if event == 'Help':
+            self._newwindow = 'Help'
+        if event == '-CONFIG_DEFAULT-':
+            self._config_default()
+            self._newwindow = 'config'
+        if event == '-HELP_CONFIG-':
+            self._newwindow = 'config_help'
         return self._br_flag, self._newwindow
 
     def _flip_save(self):
@@ -69,7 +76,10 @@ class GUIReactor:
 
         '''Проверка ввода пути к модели, для маски в таблице'''
         if self._values['-DOCSFOLDER-']:
-            masks_values.update({masks['DOCSFOLDER_MASK']: chandler.strip_to_cadfolder(self._values['-DOCSFOLDER-'])})
+            if self._params['CADFOLDER_PATH'] in self._values['-DOCSFOLDER-']:
+                masks_values.update({masks['DOCSFOLDER_MASK']: chandler.strip_to_cadfolder(self._values['-DOCSFOLDER-'])})
+            else:
+                masks_values.update({masks['DOCSFOLDER_MASK']: self._values['-DOCSFOLDER-']})
         else:
             return 'Не введён путь к документации (справочный)'
 
@@ -77,7 +87,7 @@ class GUIReactor:
         if self._values['-DEFSAVE-']:
             self._params.update({'SAVEPATH': curr_dt_subfolder(self._values['-XLSX-'])})
         elif self._values['-SAVEFOLDER-']:
-            self._params.update({'SAVEPATH': self._values['-SAVEFOLDER-']})
+            self._params.update({'SAVEPATH': str(self._values['-SAVEFOLDER-']) + '/'})
         else:
             return 'Выбери путь для сохранения'
 
@@ -94,6 +104,12 @@ class GUIReactor:
             self._params.update({'CUSTOMBLANK': self._values['-CUSTOMBLANK-']})
         if parse_list:
             self._params.update({'PARSELIST': parse_list})
+
+        if not self._params.get('AUTHOR'):
+            return 'Не настроено имя автора (Параметр "AUTHOR")'
+
+        if not self._params.get('CADFOLDER_PATH'):
+            return 'Не настроен путь к хранилищу КД (Параметр "CADFOLDER_PATH")'
 
         '''Возвращает None, если все условия выше не сработали (Ошибки не обнаружены)'''
         return None
@@ -141,3 +157,7 @@ class GUIReactor:
             self._params['MASKS'].update({label: self._values[label]})
         config_save(self._params)
         sg.popup_ok('Конфиг сохранён')
+
+    @staticmethod
+    def _config_default():
+        touch_config(force_create=True)
